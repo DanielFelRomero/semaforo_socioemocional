@@ -54,7 +54,7 @@ if rol == "👨‍🎓 Estudiante (Votar)":
 
     asignatura = st.selectbox(
         "Asignatura / Sesión:",
-        ["General", "Ingeniería de Datos", "ETL", "Arquitecturas Analíticas", "Estadística"]
+        ["ETL", "Arquitecturas Analíticas", "Otro"]
     )
 
     st.markdown("### ¿Cómo te sientes para la clase de hoy?")
