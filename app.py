@@ -138,7 +138,7 @@ else:
         # Pestaña 2: Fragmento con actualización automática continua
         with tab_dashboard:
             # Decorador que hace que SOLO esta sección se ejecute cada 2 segundos
-            @st.fragment(run_every=2)
+            @st.fragment(run_every=1)
             def render_dashboard_en_vivo():
                 df = cargar_datos()
 
