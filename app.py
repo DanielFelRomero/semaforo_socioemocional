@@ -1,25 +1,34 @@
-import requests
-import streamlit as st
-from streamlit_gsheets import GSheetsConnection
 import pandas as pd
+import requests
 import datetime
 import plotly.express as px
 import qrcode
 from io import BytesIO
-
-conn = st.connection("gsheets", type=GSheetsConnection)
+import streamlit as st
 
 def cargar_datos():
     try:
-        # ttl=2 segundos para que el dashboard del docente lea casi en tiempo real
-        df = conn.read(ttl=2)
-        if df is not None and not df.empty:
+        # Extraer el ID de la hoja desde los Secrets
+        # Asegúrate de tener SHEET_ID o la URL en st.secrets
+        sheet_url = st.secrets["connections"]["gsheets"]["spreadsheet"]
+        
+        # Extraer automáticamente el ID del enlace
+        sheet_id = sheet_url.split("/d/")[1].split("/")[0]
+        
+        # URL directa de exportación CSV de Google Sheets (gviz)
+        csv_url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv"
+        
+        # Lectura directa con pandas
+        df = pd.read_csv(csv_url)
+        
+        if not df.empty and "fecha_hora" in df.columns:
             df["fecha_hora"] = pd.to_datetime(df["fecha_hora"], errors="coerce")
             return df
         return pd.DataFrame(columns=["fecha_hora", "asignatura", "estado", "motivo"])
-    except Exception:
+    except Exception as e:
+        st.error(f"Error al cargar datos desde Google Sheets: {e}")
         return pd.DataFrame(columns=["fecha_hora", "asignatura", "estado", "motivo"])
-
+        
 def registrar_voto(asignatura, estado, motivo):
     try:
         webhook_url = st.secrets["WEBHOOK_URL"]
