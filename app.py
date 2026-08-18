@@ -21,13 +21,25 @@ def cargar_datos():
         return pd.DataFrame(columns=["fecha_hora", "asignatura", "estado", "motivo"])
 
 def registrar_voto(asignatura, estado, motivo):
-    webhook_url = st.secrets["WEBHOOK_URL"]
-    payload = {
-        "fecha_hora": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "asignatura": asignatura,
-        "estado": estado,
-        "motivo": motivo
-    }
+    try:
+        webhook_url = st.secrets["WEBHOOK_URL"]
+        payload = {
+            "fecha_hora": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "asignatura": asignatura,
+            "estado": estado,
+            "motivo": motivo
+        }
+        # allow_redirects=True permite seguir la redirección interna de Google
+        response = requests.post(webhook_url, json=payload, timeout=10, allow_redirects=True)
+        
+        if response.status_code == 200:
+            return True
+        else:
+            st.error(f"Error del servidor Google ({response.status_code}): {response.text}")
+            return False
+    except Exception as e:
+        st.error(f"Error al enviar datos: {e}")
+        return False
     # Envío directo por HTTP POST a Google Sheets
     response = requests.post(webhook_url, json=payload, timeout=8)
     return response.status_code == 200
@@ -77,10 +89,12 @@ if rol == "👨‍🎓 Estudiante (Votar)":
 
     if estado_elegido:
         with st.spinner("Guardando tu respuesta..."):
-            registrar_voto(asignatura, estado_elegido, motivo)
-        st.success(f"¡Listo! Registraste tu estado: {estado_elegido}")
-        if estado_elegido == "Verde":
-            st.balloons()
+            exito = registrar_voto(asignatura, estado_elegido, motivo)
+        
+        if exito:
+            st.success(f"¡Listo! Registraste tu estado: {estado_elegido}")
+            if estado_elegido == "Verde":
+                st.balloons()
 
 # ---------------------------------------------------------
 # VISTA: DOCENTE (DASHBOARD)
@@ -183,4 +197,5 @@ else:
                                 st.markdown(f"**{ic}:** {row['motivo']}")
 
             if st.button("🔄 Actualizar Resultados"):
+                st.cache_data.clear() # Limpia la caché interna de Streamlit
                 st.rerun()
